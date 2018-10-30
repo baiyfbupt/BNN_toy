@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=1 python -u main.py>no1x1.log 2>&1 &
+CUDA_VISIBLE_DEVICES=4,5,6 python -u main.py --arch=dense >dense.log 2>&1 &

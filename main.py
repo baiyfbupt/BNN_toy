@@ -13,6 +13,8 @@ import torch.optim as optim
 
 from models import nin
 from models import no1x1
+from models import wider
+from models import dense
 from torch.autograd import Variable
 
 def save_state(model, best_acc):
@@ -135,6 +137,8 @@ if __name__=='__main__':
         model = no1x1.Net()
     elif args.arch == 'wider':
         model = wider.Net()
+    elif args.arch == 'dense':
+        model = dense.Net(12, 100, 0.5, 10)
     else:
         raise Exception(args.arch+' is currently not supported')
 
@@ -145,7 +149,7 @@ if __name__=='__main__':
         for m in model.modules():
             if isinstance(m, nn.Conv2d):
                 m.weight.data.normal_(0, 0.05)
-                m.bias.data.zero_()
+                #m.bias.data.zero_()
     else:
         print('==> Load pretrained model form', args.pretrained, '...')
         pretrained_model = torch.load(args.pretrained)

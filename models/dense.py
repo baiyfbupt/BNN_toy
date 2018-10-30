@@ -1,3 +1,4 @@
+import math
 import torch.nn as nn
 import torch
 import torch.nn.functional as F
@@ -50,7 +51,7 @@ class SingleLayer(nn.Module):
     def __init__(self, nChannels, growthRate):
         super(SingleLayer, self).__init__()
         self.bn1 = nn.BatchNorm2d(nChannels, eps=1e-4, momentum=0.1, affine=False)
-        self.conv1 = BinConv2d(nChannels, growthRate, kernel_size=3, padding=1, bias=False)
+        self.conv1 = BinConv2d(nChannels, growthRate, kernel_size=3, stride=1, padding=1)
     
     def forward(self, x):
         out = self.conv1(F.relu(self.bn1(x)))
@@ -61,53 +62,42 @@ class Transition(nn.Module):
     def __init__(self, nChannels, nOutChannels):
         super(Transition, self).__init__()
         self.bn1 = nn.BatchNorm2d(nChannels, eps=1e-4, momentum=0.1, affine=False)
-        self.conv1 = BinConv2d(nChannels, nOutChannels, kernel_size=1, bias=False)
+        self.conv1 = BinConv2d(nChannels, nOutChannels, kernel_size=1, stride=1, padding=0)
   
     def forward(self, x):
         out = self.conv1(F.relu(self.bn1(x)))
         out = F.avg_pool2d(out, 2)
         return out
 
-class DenseNet(nn.Module):
-  def __init__(self, growthRate, depth, reduction, nClasses, bottleneck):
-    super(DenseNet, self).__init__()
+class Net(nn.Module):
+    def __init__(self, growthRate, depth, reduction, nClasses):
+        super(Net, self).__init__()
+    
+        nDenseBlocks = int( (depth-4) / 3 )
+    
+        nChannels = 2*growthRate
+        self.conv1 = nn.Conv2d(3, nChannels, kernel_size=3, padding=1, bias=False)
+    
+        self.dense1 = self._make_dense(nChannels, growthRate, nDenseBlocks)
+        nChannels += nDenseBlocks*growthRate
+        nOutChannels = int(math.floor(nChannels*reduction))
+        self.trans1 = Transition(nChannels, nOutChannels)
+    
+        nChannels = nOutChannels
+        self.dense2 = self._make_dense(nChannels, growthRate, nDenseBlocks)
+        nChannels += nDenseBlocks*growthRate
+        nOutChannels = int(math.floor(nChannels*reduction))
+        self.trans2 = Transition(nChannels, nOutChannels)
+    
+        nChannels = nOutChannels
+        self.dense3 = self._make_dense(nChannels, growthRate, nDenseBlocks)
+        nChannels += nDenseBlocks*growthRate
+    
+        self.bn1 = nn.BatchNorm2d(nClasses, eps=1e-4, momentum=0.1, affine=False)
+        self.conv2 = BinConv2d(nChannels, nClasses, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(nChannels, nClasses)
 
-    nDenseBlocks = int( (depth-4) / 3 )
-
-    nChannels = 2*growthRate
-    self.conv1 = nn.Conv2d(3, nChannels, kernel_size=3, padding=1, bias=False)
-
-    self.dense1 = self._make_dense(nChannels, growthRate, nDenseBlocks, bottleneck)
-    nChannels += nDenseBlocks*growthRate
-    nOutChannels = int(math.floor(nChannels*reduction))
-    self.trans1 = Transition(nChannels, nOutChannels)
-
-    nChannels = nOutChannels
-    self.dense2 = self._make_dense(nChannels, growthRate, nDenseBlocks, bottleneck)
-    nChannels += nDenseBlocks*growthRate
-    nOutChannels = int(math.floor(nChannels*reduction))
-    self.trans2 = Transition(nChannels, nOutChannels)
-
-    nChannels = nOutChannels
-    self.dense3 = self._make_dense(nChannels, growthRate, nDenseBlocks, bottleneck)
-    nChannels += nDenseBlocks*growthRate
-
-    self.bn1 = nn.BatchNorm2d(nChannels, eps=1e-4, momentum=0.1, affine=False)
-    self.fc = nn.Linear(nChannels, nClasses)
-
-    L2_NORM = 0
-    if L2_NORM:
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-            elif isinstance(m, nn.BatchNorm2d):
-              m.weight.data.fill_(1)
-              m.bias.data.zero_()
-            elif isinstance(m, nn.Linear):
-                m.bias.data.zero_()
-
-    def _make_dense(self, nChannels, growthRate, nDenseBlocks, bottleneck):
+    def _make_dense(self, nChannels, growthRate, nDenseBlocks):
         layers = []
         for i in range(int(nDenseBlocks)):
             layers.append(SingleLayer(nChannels, growthRate))
@@ -119,8 +109,10 @@ class DenseNet(nn.Module):
         out = self.trans1(self.dense1(out))
         out = self.trans2(self.dense2(out))
         out = self.dense3(out)
+        out = self.conv2(out)
         out = torch.squeeze(F.avg_pool2d(F.relu(self.bn1(out)), 8))
-        out = out.view(out.size(0), 10)
+        #out = out.view(out.size(0), 10)
         #out = self.fc(out)
         return out
+
 
