@@ -96,7 +96,7 @@ if __name__=='__main__':
             help='set if only CPU is available')
     parser.add_argument('--data', action='store', default='./data/',
             help='dataset path')
-    parser.add_argument('--arch', action='store', default='no1x1',
+    parser.add_argument('--arch', action='store', default='wider',
             help='the architecture for the network: nin')
     parser.add_argument('--lr', action='store', default='0.01',
             help='the intial learning rate')
@@ -138,7 +138,7 @@ if __name__=='__main__':
     elif args.arch == 'wider':
         model = wider.Net()
     elif args.arch == 'dense':
-        model = dense.Net(12, 100, 0.5, 10)
+        model = dense.Net(48, 40, 0.5, 10)
     else:
         raise Exception(args.arch+' is currently not supported')
 
@@ -149,7 +149,7 @@ if __name__=='__main__':
         for m in model.modules():
             if isinstance(m, nn.Conv2d):
                 m.weight.data.normal_(0, 0.05)
-                #m.bias.data.zero_()
+                m.bias.data.zero_()
     else:
         print('==> Load pretrained model form', args.pretrained, '...')
         pretrained_model = torch.load(args.pretrained)
@@ -170,7 +170,7 @@ if __name__=='__main__':
         params += [{'params':[value], 'lr': base_lr,
             'weight_decay':0.00001}]
 
-        optimizer = optim.Adam(params, lr=0.10,weight_decay=0.00001)
+        optimizer = optim.Adam(params, lr=0.10, weight_decay=0.00001)
     criterion = nn.CrossEntropyLoss()
 
     # define the binarization operator
@@ -182,7 +182,7 @@ if __name__=='__main__':
         exit(0)
 
     # start training
-    for epoch in range(1, 400):
+    for epoch in range(1, 320):
         adjust_learning_rate(optimizer, epoch)
         train(epoch)
         test()

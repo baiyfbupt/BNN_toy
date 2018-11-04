@@ -49,23 +49,24 @@ class BinConv2d(nn.Module):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
+        dropout_rate = 0.5
         self.xnor = nn.Sequential(
-                nn.Conv2d(3, 192, kernel_size=5, stride=1, padding=2),
+                nn.Conv2d(3, 192, kernel_size=3, stride=1, padding=1),
                 nn.BatchNorm2d(192, eps=1e-4, momentum=0.1, affine=False),
                 nn.ReLU(inplace=True),
                 BinConv2d(192, 256, kernel_size=3, stride=1, padding=1),
                 BinConv2d(256,  96, kernel_size=3, stride=1, padding=1),
                 nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
 
-                BinConv2d( 96, 256, kernel_size=5, stride=1, padding=2, dropout=0.5),
-                BinConv2d(256, 512, kernel_size=3, stride=1, padding=1),
-                BinConv2d(512, 1024, kernel_size=3, stride=1, padding=1),
+                BinConv2d( 96, 128, kernel_size=3, stride=1, padding=1),
+                BinConv2d(128, 256, kernel_size=3, stride=1, padding=1),
+                BinConv2d(256, 256, kernel_size=3, stride=1, padding=1),
                 nn.AvgPool2d(kernel_size=3, stride=2, padding=1),
 
-                BinConv2d(1024, 1024, kernel_size=3, stride=1, padding=1, dropout=0.5),
-                BinConv2d(1024, 2048, kernel_size=3, stride=1, padding=1),
-                nn.BatchNorm2d(2048, eps=1e-4, momentum=0.1, affine=False),
-                nn.Conv2d(2048,  10, kernel_size=3, stride=1, padding=1),
+                BinConv2d(256, 512, kernel_size=3, stride=1, padding=1),
+                BinConv2d(512, 1024, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(1024, eps=1e-4, momentum=0.1, affine=False),
+                nn.Conv2d(1024,  10, kernel_size=3, stride=1, padding=1),
                 nn.ReLU(inplace=True),
                 nn.AvgPool2d(kernel_size=8, stride=1, padding=0),
                 )

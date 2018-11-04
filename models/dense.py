@@ -62,7 +62,7 @@ class Transition(nn.Module):
     def __init__(self, nChannels, nOutChannels):
         super(Transition, self).__init__()
         self.bn1 = nn.BatchNorm2d(nChannels, eps=1e-4, momentum=0.1, affine=False)
-        self.conv1 = BinConv2d(nChannels, nOutChannels, kernel_size=1, stride=1, padding=0)
+        self.conv1 = BinConv2d(nChannels, nOutChannels, kernel_size=3, stride=1, padding=1)
   
     def forward(self, x):
         out = self.conv1(F.relu(self.bn1(x)))
@@ -93,9 +93,8 @@ class Net(nn.Module):
         self.dense3 = self._make_dense(nChannels, growthRate, nDenseBlocks)
         nChannels += nDenseBlocks*growthRate
     
-        self.bn1 = nn.BatchNorm2d(nClasses, eps=1e-4, momentum=0.1, affine=False)
-        self.conv2 = BinConv2d(nChannels, nClasses, kernel_size=3, stride=1, padding=1)
-        self.fc = nn.Linear(nChannels, nClasses)
+        self.bn1 = nn.BatchNorm2d(nChannels, eps=1e-4, momentum=0.1, affine=False)
+        self.conv2 = nn.Conv2d(nChannels, nClasses, kernel_size=3, stride=1, padding=1, bias=False)
 
     def _make_dense(self, nChannels, growthRate, nDenseBlocks):
         layers = []
@@ -109,10 +108,10 @@ class Net(nn.Module):
         out = self.trans1(self.dense1(out))
         out = self.trans2(self.dense2(out))
         out = self.dense3(out)
+        out = F.relu(self.bn1(out))
         out = self.conv2(out)
-        out = torch.squeeze(F.avg_pool2d(F.relu(self.bn1(out)), 8))
+        out = torch.squeeze(F.avg_pool2d(out, 8))
         #out = out.view(out.size(0), 10)
-        #out = self.fc(out)
         return out
 
 
