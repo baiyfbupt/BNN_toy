@@ -15,6 +15,7 @@ from models import nin
 from models import no1x1
 from models import wider
 from models import dense
+from models import dnin
 from torch.autograd import Variable
 
 def save_state(model, best_acc):
@@ -27,7 +28,7 @@ def save_state(model, best_acc):
         if 'module' in key:
             state['state_dict'][key.replace('module.', '')] = \
                     state['state_dict'].pop(key)
-    torch.save(state, 'models/nin.pth.tar')
+    torch.save(state, 'models/nindnin.pth.tar')
 
 def train(epoch):
     model.train()
@@ -118,11 +119,11 @@ if __name__=='__main__':
                 ('Please assign the correct data path with --data <DATA_PATH>')
 
     trainset = data.dataset(root=args.data, train=True)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=256,
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128,
             shuffle=True, num_workers=0)
 
     testset = data.dataset(root=args.data, train=False)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=100,
+    testloader = torch.utils.data.DataLoader(testset, batch_size=512,
             shuffle=False, num_workers=0)
 
     # define classes
@@ -139,6 +140,8 @@ if __name__=='__main__':
         model = wider.Net()
     elif args.arch == 'dense':
         model = dense.Net(48, 40, 0.5, 10)
+    elif args.arch == 'dnin':
+        model = dnin.Net()
     else:
         raise Exception(args.arch+' is currently not supported')
 
