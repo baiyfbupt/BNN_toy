@@ -49,26 +49,29 @@ class BinConv2d(nn.Module):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm2d(32, eps=1e-4, momentum=0.1, affine=False)
-        self.bconv1_1 = BinConv2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.bconv1_2 = BinConv2d(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1)
+        self.bn1 = nn.BatchNorm2d(128, eps=1e-4, momentum=0.1, affine=False)
+        self.bconv1_1 = BinConv2d(128, 128, kernel_size=3, stride=1, padding=1)
+        self.bconv1_2 = BinConv2d(256, 256, kernel_size=3, stride=1, padding=1)
         self.maxpool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.trans1 = BinConv2d(256, 96, kernel_size=3, stride=1, padding=1)
        
-        self.bconv2_1 = BinConv2d(64, 64, kernel_size=3, stride=1, padding=1, dropout=0.5)
-        self.bconv2_2 = BinConv2d(128, 128, kernel_size=3, stride=1, padding=1)
-        self.bconv2_3 = BinConv2d(192, 192, kernel_size=3, stride=1, padding=1)
+        self.bconv2_1 = BinConv2d(96, 96, kernel_size=3, stride=1, padding=1, dropout=0.5)
+        self.bconv2_2 = BinConv2d(192, 192, kernel_size=3, stride=1, padding=1)
+        self.bconv2_3 = BinConv2d(384, 384, kernel_size=3, stride=1, padding=1)
         self.maxpool2 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.trans2 = BinConv2d(384, 256, kernel_size=3, stride=1, padding=1)
  
-        self.bconv3_1 = BinConv2d(192, 192, kernel_size=3, stride=1, padding=1, dropout=0.5)
-        self.bconv3_2 = BinConv2d(384, 384, kernel_size=3, stride=1, padding=1)
-        self.bconv3_3 = BinConv2d(576, 576, kernel_size=3, stride=1, padding=1)
+        self.bconv3_1 = BinConv2d(256, 256, kernel_size=3, stride=1, padding=1, dropout=0.5)
+        self.bconv3_2 = BinConv2d(512, 512, kernel_size=3, stride=1, padding=1)
+        self.bconv3_3 = BinConv2d(1024, 1024, kernel_size=3, stride=1, padding=1)
         self.maxpool3 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.trans3 = BinConv2d(1024, 768, kernel_size=3, stride=1, padding=1)
  
-        self.bconv4_1 = BinConv2d(576, 576, kernel_size=3, stride=1, padding=1, dropout=0.5)
-        self.bconv4_2 = BinConv2d(1152, 1152, kernel_size=3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(1152, eps=1e-4, momentum=0.1, affine=False)
-        self.conv2 = nn.Conv2d(1152, 10, kernel_size=3, stride=1, padding=1)
+        self.bconv4_1 = BinConv2d(768, 768, kernel_size=3, stride=1, padding=1, dropout=0.5)
+        self.bconv4_2 = BinConv2d(1536, 1536, kernel_size=3, stride=1, padding=1)
+        self.bn2 = nn.BatchNorm2d(1536, eps=1e-4, momentum=0.1, affine=False)
+        self.conv2 = nn.Conv2d(1536, 10, kernel_size=3, stride=1, padding=1)
         self.relu = nn.ReLU(inplace=True)
         self.avgpool = nn.AvgPool2d(kernel_size=4, stride=1, padding=0)
 
@@ -82,24 +85,27 @@ class Net(nn.Module):
         #x = bconv1_1_out
         bconv1_2_out = self.bconv1_2(x)
         max1 = self.maxpool1(bconv1_2_out)
+        trans1 = self.trans1(max1)
 
-        bconv2_1_out = self.bconv2_1(max1)
-        x = torch.cat((max1, bconv2_1_out), 1)
+        bconv2_1_out = self.bconv2_1(trans1)
+        x = torch.cat((trans1, bconv2_1_out), 1)
         #x = bconv2_1_out
         bconv2_2_out = self.bconv2_2(x) 
-        x = torch.cat((max1, bconv2_2_out), 1)
+        x = torch.cat((trans1, bconv2_1_out, bconv2_2_out), 1)
         #x = bconv2_2_out
         bconv2_3_out = self.bconv2_3(x)
         max2 = self.maxpool2(bconv2_3_out)
+        trans2 = self.trans2(max2)
  
-        bconv3_1_out = self.bconv3_1(max2)
-        x = torch.cat((max2, bconv3_1_out), 1)
+        bconv3_1_out = self.bconv3_1(trans2)
+        x = torch.cat((trans2, bconv3_1_out), 1)
         #x = bconv3_1_out
         bconv3_2_out = self.bconv3_2(x) 
-        x = torch.cat((max2, bconv3_2_out), 1)
+        x = torch.cat((trans2, bconv3_1_out, bconv3_2_out), 1)
         #x = bconv3_2_out
         bconv3_3_out = self.bconv3_3(x)
         max3 = self.maxpool3(bconv3_3_out) 
+        max3 = self.trans3(max3)
 
         bconv4_1_out = self.bconv4_1(max3)
         x = torch.cat((max3, bconv4_1_out), 1)

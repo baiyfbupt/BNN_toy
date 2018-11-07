@@ -84,7 +84,7 @@ def test():
     return
 
 def adjust_learning_rate(optimizer, epoch):
-    update_list = [120, 200, 240, 280, 320]
+    update_list = [40, 120, 200, 240, 280, 320]
     if epoch in update_list:
         for param_group in optimizer.param_groups:
             param_group['lr'] = param_group['lr'] * 0.1
@@ -99,7 +99,7 @@ if __name__=='__main__':
             help='dataset path')
     parser.add_argument('--arch', action='store', default='wider',
             help='the architecture for the network: nin')
-    parser.add_argument('--lr', action='store', default='0.01',
+    parser.add_argument('--lr', action='store', default='0.005',
             help='the intial learning rate')
     parser.add_argument('--pretrained', action='store', default=None,
             help='the path to the pretrained model')
@@ -171,9 +171,9 @@ if __name__=='__main__':
 
     for key, value in param_dict.items():
         params += [{'params':[value], 'lr': base_lr,
-            'weight_decay':0.00001}]
+            'weight_decay':0.00005}]
 
-        optimizer = optim.Adam(params, lr=0.10, weight_decay=0.00001)
+        optimizer = optim.Adam(params, lr=0.10, weight_decay=0.00005)
     criterion = nn.CrossEntropyLoss()
 
     # define the binarization operator
